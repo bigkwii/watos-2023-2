@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, request, render_template, make_response, session, flash
+from flask import Flask, redirect, url_for, request, render_template, make_response, session, flash, jsonify
 import numpy as np
 import pandas as pd
 import rdflib as rdf
@@ -20,13 +20,14 @@ def get_query_results(endpoint_url, query):
 
 def perform_wikidata_query(anime_name_query):
     query = """
-    SELECT ?anime ?animeLabel ?anilist_id ?default_review_score WHERE {
+    SELECT DISTINCT ?anime ?animeLabel ?anilist_id ?logo_image WHERE {
         ?anime wdt:P31/wdt:P279* wd:Q1107 .
         ?anime wdt:P8729 ?anilist_id .
         ?anime rdfs:label ?animeLabel.
+        OPTIONAL{?anime wdt:P154 ?logo_image}
 
         # stuff that may or not be there
-        OPTIONAL{?anime wdt:P444 ?default_review_score}
+        # OPTIONAL{?anime wdt:P444 ?default_review_score}
         
         # filters
         FILTER(LANG(?animeLabel) = "en")
@@ -39,33 +40,40 @@ def perform_wikidata_query(anime_name_query):
 
 app = Flask(__name__)
 
-# @app.route('/')
-# def index():
-#     return redirect(url_for('home', name='no name'))
-
-# @app.route('/<name>')
-# def home(name):
-#     return render_template('index.html', content=name)
-
-# @app.route('/user/<name>')
-# def user(name):
-#     return f'''
-#     <h1>Hello, {name}!</h1>
-#     '''
-
-# @app.route('/admin')
-# def admin():
-#     return redirect(url_for('forbidden'))
+SELECTED_ANIMES = []
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', selected_animes=SELECTED_ANIMES)
 
 @app.route('/search', methods=['POST'])
 def search():
+    print(SELECTED_ANIMES)
     query = request.form['query']
     results = perform_wikidata_query(query)
-    return render_template("index.html", query=query, results=results)
+    return render_template("index.html", query=query, results=results, selected_animes=SELECTED_ANIMES)
+
+@app.route('/add_to_selected', methods=['POST'])
+def add_to_selected():
+    anime_title = request.json['anime_title']
+    SELECTED_ANIMES.append(anime_title)
+    return jsonify({'success': True})
+
+@app.route('/remove_from_selected', methods=['POST'])
+def remove_from_selected():
+    anime_title = request.json['anime_title']
+    SELECTED_ANIMES.remove(anime_title)
+    return jsonify({'success': True})
+
+@app.route('/get_anilist_info', methods=['POST'])
+def get_anilist_info():
+    anilist_id = request.json.get('anilist_id')
+    anilist = Anilist()
+    anime_info = anilist.get_anime_with_id(int(anilist_id))
+    return jsonify({
+        'cover_image': anime_info.get('cover_image', ''),
+        'average_score': anime_info.get('average_score', ''),
+    })
 
 @app.route('/forbidden')
 def forbidden():
