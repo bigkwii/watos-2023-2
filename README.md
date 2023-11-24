@@ -20,7 +20,7 @@ pip install flask SPARQLWrapper AnilistPython
 python src/app.py
 ```
 
-Then, open your browser and go to `[localhost:81](http://localhost:81)`.
+Then, open your browser and go to [localhost:81](http://localhost:81).
 
 ## Special thanks
 
