@@ -43,7 +43,7 @@
         {% for anime in selected_animes %}
             <li class="list-group-item">
                 {{ anime.animeLabel.value }}
-                <button class="btn btn-danger btn-sm float-right" onclick='removeFromSelected("{{ anime }}")'>X</button>
+                <button class="btn btn-danger btn-sm float-right" onclick='removeFromSelected({{ anime | tojson | safe }})'>X</button>
             </li>
         {% endfor %}
     </ul>
@@ -54,7 +54,7 @@
             {% for result in results %}
                 <li class="list-group-item">
                     {{ result.animeLabel.value }}
-                    <button class="btn btn-success btn-sm float-right" onclick='addToSelected("{{ result }}")'>+</button>
+                    <button class="btn btn-success btn-sm float-right" onclick='addToSelected({{ result | tojson | safe }})'>+</button>
                 </li>
             {% endfor %}
         </ul>
@@ -62,8 +62,6 @@
 
     <script>
         function addToSelected(animeData) {
-            // convert ' to " and parse the JSON string into an object
-            animeData = JSON.parse(animeData.replace(/'/g, '"'));
             const animeLabel = animeData.animeLabel.value;
             const selectedAnimesList = document.getElementById('selectedAnimes');
             // Check if the anime is already in the list
@@ -103,10 +101,14 @@
         }
 
         function removeFromSelected(animeData) {
-            // convert ' to " and parse the JSON string into an object
-            animeData = JSON.parse(animeData.replace(/'/g, '"'));
+            // this is very inelegant, but it works for now
+            if (typeof animeData === 'string') {
+                animeData = JSON.parse(animeData);
+            }
+            console.log(animeData);
             const selectedAnimesList = document.getElementById('selectedAnimes');
             const listItem = [...selectedAnimesList.children].find(item => item.textContent.includes(animeData.animeLabel.value));
+            console.log(listItem);
             // Remove the anime from the list
             if (listItem) {
                 selectedAnimesList.removeChild(listItem);
