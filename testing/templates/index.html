@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>Wikidata Anime Search</title>
+    <title>Wikidata Anime Recommendation Generator</title>
     <meta charset="UTF-8">
     <meta-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -46,7 +46,7 @@
 </head>
 
 <body class="container mt-5">
-    <h1 class="mb-4"> Wikidata Anime Search </h1>
+    <a href="./"><h1 class="mb-4">  Wikidata Anime Recommendation Generator </h1> </a>
     <form action="{{ url_for('search') }}" method="post" class="mb-4">
         <input type="text" name="query" class="form-control" placeholder="Anime title (localized english title, sorry, that's just what Wikidata uses)...">
         <div class="input-group-append">
@@ -67,7 +67,7 @@
         {% endfor %}
     </ul>
 
-    <button class="btn btn-primary" onclick="generateRecommendations()">Generate Recommendations</button>
+    <button id="generate-button" class="btn btn-primary" onclick="generateRecommendations()">Generate Recommendations</button>
 
     {% if results %}
         <h2>Search Results for "{{ query }}"</h2>
@@ -82,6 +82,17 @@
             {% endfor %}
         </ul>
     {% endif %}
+
+    <h2> Generated Recommendations </h2>
+    <h3> Based on Genres you like... </h3>
+    <ul id="viaGenres" class="list-group mb-4">
+        <!-- Recommendations based on genres will be added here dynamically -->
+    </ul>
+
+    <h3> Based on Studios you like... </h3>
+    <ul id="viaStudio" class="list-group mb-4">
+        <!-- Recommendations based on studios will be added here dynamically -->
+    </ul>
 
     <script>
         function addToSelected(animeData) {
@@ -162,18 +173,99 @@
             }
         }
 
-        function generateRecommendations() {
+        async function generateRecommendations() {
             if (document.getElementById('selectedAnimes').children.length == 0) {
                 alert('You gotta select some animes first!');
                 return;
             }
-            fetch('/generate_recommendations')
-                .then(response => response.json())
-                .then(data => {
-                    // Handle the recommendations data, e.g., display them on the UI
-                    console.log(data);
-                    // You can update the UI to show the recommendations, e.g., create a new list
+            console.log('Generating recommendations...');
+            // Set the button to disabled to prevent multiple clicks and mark it as loading
+            const generateButton = document.getElementById('generate-button');
+            generateButton.disabled = true;
+            generateButton.textContent = "Loading (it's gonna take a while)...";
+            fetch('/generate_recommendations' ,{
+                method: 'GET',
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                // there are 2 lists of recommendations. data["via_genres"] and data["via_studio"]
+                const viaGenres = data["recommendations"]["via_genres"];
+                const viaStudio = data["recommendations"]["via_studios"];
+                // Clear the lists
+                const viaGenresList = document.getElementById('viaGenres');
+                const viaStudioList = document.getElementById('viaStudio');
+                viaGenresList.innerHTML = '';
+                viaStudioList.innerHTML = '';
+                // Add the recommendations to the list
+                console.log(viaGenres)
+                viaGenres.forEach(anime => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item';
+                    // Add image
+                    const image = document.createElement('img');
+                    image.className = 'anime-cover-image';
+                    image.src = anime.cover_image;
+                    listItem.appendChild(image);
+                    // Add link to anime
+                    const link = document.createElement('a');
+                    link.target = '_blank';
+                    link.href = anime.anime.value;
+                    link.textContent = anime.animeLabel.value;
+                    listItem.appendChild(link);
+                    // Add link to AniList
+                    const anilistLink = document.createElement('a');
+                    anilistLink.target = '_blank';
+                    anilistLink.href = 'https://anilist.co/anime/' + anime.anilist_id.value;
+                    anilistLink.textContent = ' ' + anime.average_score;
+                    listItem.appendChild(anilistLink);
+                    // Add a "Add" button next to the selected anime
+                    const addButton = document.createElement('button');
+                    addButton.className = 'btn btn-success btn-sm float-right';
+                    addButton.textContent = '+';
+                    addButton.onclick = function() {
+                        addToSelected(JSON.stringify(anime));
+                    };
+                    listItem.appendChild(addButton);
+                    // Add the anime and the "Add" button to the list
+                    viaGenresList.appendChild(listItem);
                 });
+                console.log(viaStudio)
+                viaStudio.forEach(anime => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item';
+                    // Add image
+                    const image = document.createElement('img');
+                    image.className = 'anime-cover-image';
+                    image.src = anime.cover_image;
+                    listItem.appendChild(image);
+                    // Add link to anime
+                    const link = document.createElement('a');
+                    link.target = '_blank';
+                    link.href = anime.anime.value;
+                    link.textContent = anime.animeLabel.value;
+                    listItem.appendChild(link);
+                    // Add link to AniList
+                    const anilistLink = document.createElement('a');
+                    anilistLink.target = '_blank';
+                    anilistLink.href = 'https://anilist.co/anime/' + anime.anilist_id.value;
+                    anilistLink.textContent = ' ' + anime.average_score;
+                    listItem.appendChild(anilistLink);
+                    // Add a "Add" button next to the selected anime
+                    const addButton = document.createElement('button');
+                    addButton.className = 'btn btn-success btn-sm float-right';
+                    addButton.textContent = '+';
+                    addButton.onclick = function() {
+                        addToSelected(JSON.stringify(anime));
+                    };
+                    listItem.appendChild(addButton);
+                    // Add the anime and the "Add" button to the list
+                    viaStudioList.appendChild(listItem);
+                });
+                // Re-enable the button
+                generateButton.disabled = false;
+                generateButton.textContent = "Generate Recommendations";
+            });
         }
     </script>
 

@@ -24,7 +24,6 @@ def perform_wikidata_query(anime_name_query):
         ?anime wdt:P31/wdt:P279* wd:Q1107 .
         ?anime wdt:P8729 ?anilist_id .
         ?anime rdfs:label ?animeLabel.
-        
         # filters
         FILTER(LANG(?animeLabel) = "en")
         FILTER(REGEX(?animeLabel, "%s", "i"))
@@ -79,15 +78,104 @@ def get_anilist_info():
         'average_score': anime_info.get('average_score', ''),
     })
 
-@app.route('/generate_recommendations', methods=['POST'])
+@app.route('/generate_recommendations', methods=['GET'])
 def generate_recommendations():
-    selected_animes = request.json.get('selectedAnimes', [])
-    
-    # Perform Wikidata queries to obtain information about selected animes
-    # Implement your recommendation generation logic here
-
-    recommendations = [...]  # Replace with your actual recommendations
-    
+    selected_animes = SELECTED_ANIMES
+    # get the anime wikidata ids
+    anime_wikidata_ids = []
+    for anime in selected_animes:
+        anime_wikidata_ids.append(anime['anime']['value'].split('/')[-1])
+    # query for genres and studios
+    print(">>> Querying for genres and studios...")
+    query = """
+    SELECT DISTINCT ?anime ?animeLabel ?genre ?genreLabel ?studio ?studioLabel WHERE {
+        VALUES ?anime { %s }
+        OPTIONAL {
+            ?anime wdt:P136 ?genre.
+            ?genre rdfs:label ?genreLabel.
+            FILTER(LANG(?genreLabel) = "en")
+        }
+        OPTIONAL {
+            ?anime wdt:P272 ?studio.
+            ?studio rdfs:label ?studioLabel.
+            FILTER(LANG(?studioLabel) = "en")
+        }
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en" . }
+        } ORDER BY ?animeLabel
+    """ % ' '.join(['wd:%s' % id for id in anime_wikidata_ids])
+    results = get_query_results(WIKIDATA_URL, query)
+    # get genres and studios and count how many times each shows up
+    genres = {}
+    studios = {}
+    for result in results['results']['bindings']:
+        if 'genre' in result:
+            genre = result['genre']['value'].split('/')[-1]
+            if genre not in genres:
+                genres[genre] = 0
+            genres[genre] += 1
+        if 'studio' in result:
+            studio = result['studio']['value'].split('/')[-1]
+            if studio not in studios:
+                studios[studio] = 0
+            studios[studio] += 1
+    # sort genres and studios by count
+    genres = sorted(genres.items(), key=lambda x: x[1], reverse=True)
+    studios = sorted(studios.items(), key=lambda x: x[1], reverse=True)
+    # get the top 3 genres and studios
+    genres = genres[:3] if len(genres) > 3 else genres
+    studios = studios[:3] if len(studios) > 3 else studios
+    # query for anime with those genres
+    print(">>> Querying for anime with genres...")
+    print(">>> with genres: ", ' '.join(['wd:%s' % genre[0] for genre in genres]))
+    query = """
+    SELECT DISTINCT ?anime ?animeLabel ?anilist_id WHERE {
+        ?anime wdt:P31/wdt:P279* wd:Q1107 .
+        ?anime wdt:P8729 ?anilist_id .
+        ?anime rdfs:label ?animeLabel.
+        FILTER(LANG(?animeLabel) = "en")
+        VALUES ?genre { %s }
+        ?anime wdt:P136 ?genre.
+        ?genre rdfs:label ?genreLabel.
+        FILTER(LANG(?genreLabel) = "en")
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+    } ORDER BY ?animeLabel LIMIT 25
+    """ % ' '.join(['wd:%s' % genre[0] for genre in genres])
+    genre_results = get_query_results(WIKIDATA_URL, query)
+    # query for anime with those studios
+    print(">>> Querying for anime with studios...")
+    print(">>> with studios: ", ' '.join(['wd:%s' % studio[0] for studio in studios]))
+    query = """
+    SELECT DISTINCT ?anime ?animeLabel ?anilist_id WHERE {
+        ?anime wdt:P31/wdt:P279* wd:Q1107 .
+        ?anime wdt:P8729 ?anilist_id .
+        ?anime rdfs:label ?animeLabel.
+        FILTER(LANG(?animeLabel) = "en")
+        VALUES ?studio { %s }
+        ?anime wdt:P272 ?studio.
+        ?studio rdfs:label ?studioLabel.
+        FILTER(LANG(?studioLabel) = "en")
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+    } ORDER BY ?animeLabel LIMIT 20
+    """ % ' '.join(['wd:%s' % studio[0] for studio in studios])
+    studio_results = get_query_results(WIKIDATA_URL, query)
+    # add anilist info to results
+    anilist = Anilist()
+    for result in genre_results['results']['bindings']:
+        anilist_id = result['anilist_id']['value']
+        anime_info = anilist.get_anime_with_id(int(anilist_id))
+        result['cover_image'] = anime_info.get('cover_image', '')
+        result['average_score'] = anime_info.get('average_score', '')
+    for result in studio_results['results']['bindings']:
+        anilist_id = result['anilist_id']['value']
+        anime_info = anilist.get_anime_with_id(int(anilist_id))
+        result['cover_image'] = anime_info.get('cover_image', '')
+        result['average_score'] = anime_info.get('average_score', '')
+    # combine results
+    recommendations = {
+        'via_genres': genre_results['results']['bindings'],
+        'via_studios': studio_results['results']['bindings'],
+    }
+    print(">>> Sending recommendations to frontend...")
     return jsonify({'recommendations': recommendations})
 
 @app.route('/forbidden')
