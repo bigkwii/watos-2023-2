@@ -25,13 +25,24 @@
             background-color: #333333;
             color: #ffffff;
         }
+        body .anime-cover-image {
+            object-fit: cover;
+            width: 50px;
+            height: 50px;
+            border-radius: 5px;
+        }
+        body .list-group-item a {
+            margin-left: 20px;
+            margin-right: 20px;
+            font-size: large;
+        }
     </style>
 </head>
 
 <body class="container mt-5">
     <h1 class="mb-4"> Wikidata Anime Search </h1>
     <form action="{{ url_for('search') }}" method="post" class="mb-4">
-        <input type="text" name="query" class="form-control" placeholder="Anime title (localized english title, sorry)...">
+        <input type="text" name="query" class="form-control" placeholder="Anime title (localized english title, sorry, that's just what Wikidata uses)...">
         <div class="input-group-append">
             <button class="btn btn-outline-secondary" type="submit">Search</button>
         </div>
@@ -42,7 +53,9 @@
         <!-- Selected animes will be added here dynamically -->
         {% for anime in selected_animes %}
             <li class="list-group-item">
-                {{ anime.animeLabel.value }}
+                <img class="anime-cover-image" src="{{anime.cover_image}}" alt="">
+                <a target="_blank" href="{{anime.anime.value}}"> {{ anime.animeLabel.value }} </a>
+                <a target="_blank" href="{{'https://anilist.co/anime/' + anime.anilist_id.value}}"> <b> {{ anime.average_score/10 }} </b> </a>
                 <button class="btn btn-danger btn-sm float-right" onclick='removeFromSelected({{ anime | tojson | safe }})'>X</button>
             </li>
         {% endfor %}
@@ -53,7 +66,9 @@
         <ul class="list-group">
             {% for result in results %}
                 <li class="list-group-item">
-                    {{ result.animeLabel.value }}
+                    <img class="anime-cover-image" src="{{result.cover_image}}" alt="">
+                    <a target="_blank" href="{{result.anime.value}}"> {{ result.animeLabel.value }} </a>
+                    <a target="_blank" href="{{'https://anilist.co/anime/' + result.anilist_id.value}}"> <b> {{ result.average_score/10 }} </b> </a>
                     <button class="btn btn-success btn-sm float-right" onclick='addToSelected({{ result | tojson | safe }})'>+</button>
                 </li>
             {% endfor %}

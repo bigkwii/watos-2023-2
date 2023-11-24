@@ -50,6 +50,13 @@ def index():
 def search():
     query = request.form['query']
     results = perform_wikidata_query(query)
+    # get anilist image and average score
+    anilist = Anilist()
+    for result in results:
+        anilist_id = result['anilist_id']['value']
+        anime_info = anilist.get_anime_with_id(int(anilist_id))
+        result['cover_image'] = anime_info.get('cover_image', '')
+        result['average_score'] = anime_info.get('average_score', '')
     return render_template("index.html", query=query, results=results, selected_animes=SELECTED_ANIMES)
 
 @app.route('/add_to_selected', methods=['POST'])
