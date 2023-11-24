@@ -36,6 +36,12 @@
             margin-right: 20px;
             font-size: large;
         }
+        body a:link {
+            color: #ffffff;
+        }
+        body a:visited {
+            color: #ffffff;
+        }
     </style>
 </head>
 
@@ -83,7 +89,23 @@
             if (!selectedAnimesList.innerHTML.includes(animeData.animeLabel.value)) {
                 const listItem = document.createElement('li');
                 listItem.className = 'list-group-item';
-                listItem.textContent = animeData.animeLabel.value;
+                // Add image
+                const image = document.createElement('img');
+                image.className = 'anime-cover-image';
+                image.src = animeData.cover_image;
+                listItem.appendChild(image);
+                // Add link to anime
+                const link = document.createElement('a');
+                link.target = '_blank';
+                link.href = animeData.anime.value;
+                link.textContent = animeLabel;
+                listItem.appendChild(link);
+                // Add link to AniList
+                const anilistLink = document.createElement('a');
+                anilistLink.target = '_blank';
+                anilistLink.href = 'https://anilist.co/anime/' + animeData.anilist_id.value;
+                anilistLink.textContent = ' ' + animeData.average_score/10;
+                listItem.appendChild(anilistLink);
                 // Add a "Remove" button next to the selected anime
                 const removeButton = document.createElement('button');
                 removeButton.className = 'btn btn-danger btn-sm float-right';

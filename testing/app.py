@@ -20,11 +20,10 @@ def get_query_results(endpoint_url, query):
 
 def perform_wikidata_query(anime_name_query):
     query = """
-    SELECT DISTINCT ?anime ?animeLabel ?anilist_id ?logo_image WHERE {
+    SELECT DISTINCT ?anime ?animeLabel ?anilist_id  WHERE {
         ?anime wdt:P31/wdt:P279* wd:Q1107 .
         ?anime wdt:P8729 ?anilist_id .
         ?anime rdfs:label ?animeLabel.
-        OPTIONAL{?anime wdt:P154 ?logo_image}
 
         # stuff that may or not be there
         # OPTIONAL{?anime wdt:P444 ?default_review_score}
