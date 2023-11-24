@@ -1,5 +1,5 @@
 # watos-2023-2
-Web de Datos 2023-2 - Final Project
+Web de Datos 2023-2 - Final Project - Group 7
 
 ## Members
 
