@@ -61,11 +61,13 @@
             <li class="list-group-item">
                 <img class="anime-cover-image" src="{{anime.cover_image}}" alt="">
                 <a target="_blank" href="{{anime.anime.value}}"> {{ anime.animeLabel.value }} </a>
-                <a target="_blank" href="{{'https://anilist.co/anime/' + anime.anilist_id.value}}"> <b> {{ anime.average_score/10 }} </b> </a>
+                <a target="_blank" href="{{'https://anilist.co/anime/' + anime.anilist_id.value}}"> <b> {{ anime.average_score }} </b> </a>
                 <button class="btn btn-danger btn-sm float-right" onclick='removeFromSelected({{ anime | tojson | safe }})'>X</button>
             </li>
         {% endfor %}
     </ul>
+
+    <button class="btn btn-primary" onclick="generateRecommendations()">Generate Recommendations</button>
 
     {% if results %}
         <h2>Search Results for "{{ query }}"</h2>
@@ -74,7 +76,7 @@
                 <li class="list-group-item">
                     <img class="anime-cover-image" src="{{result.cover_image}}" alt="">
                     <a target="_blank" href="{{result.anime.value}}"> {{ result.animeLabel.value }} </a>
-                    <a target="_blank" href="{{'https://anilist.co/anime/' + result.anilist_id.value}}"> <b> {{ result.average_score/10 }} </b> </a>
+                    <a target="_blank" href="{{'https://anilist.co/anime/' + result.anilist_id.value}}"> <b> {{ result.average_score }} </b> </a>
                     <button class="btn btn-success btn-sm float-right" onclick='addToSelected({{ result | tojson | safe }})'>+</button>
                 </li>
             {% endfor %}
@@ -104,7 +106,7 @@
                 const anilistLink = document.createElement('a');
                 anilistLink.target = '_blank';
                 anilistLink.href = 'https://anilist.co/anime/' + animeData.anilist_id.value;
-                anilistLink.textContent = ' ' + animeData.average_score/10;
+                anilistLink.textContent = ' ' + animeData.average_score;
                 listItem.appendChild(anilistLink);
                 // Add a "Remove" button next to the selected anime
                 const removeButton = document.createElement('button');
@@ -158,6 +160,20 @@
                     body: JSON.stringify(animeData),
                 });
             }
+        }
+
+        function generateRecommendations() {
+            if (document.getElementById('selectedAnimes').children.length == 0) {
+                alert('You gotta select some animes first!');
+                return;
+            }
+            fetch('/generate_recommendations')
+                .then(response => response.json())
+                .then(data => {
+                    // Handle the recommendations data, e.g., display them on the UI
+                    console.log(data);
+                    // You can update the UI to show the recommendations, e.g., create a new list
+                });
         }
     </script>
 

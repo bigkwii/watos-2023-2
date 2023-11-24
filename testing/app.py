@@ -24,9 +24,6 @@ def perform_wikidata_query(anime_name_query):
         ?anime wdt:P31/wdt:P279* wd:Q1107 .
         ?anime wdt:P8729 ?anilist_id .
         ?anime rdfs:label ?animeLabel.
-
-        # stuff that may or not be there
-        # OPTIONAL{?anime wdt:P444 ?default_review_score}
         
         # filters
         FILTER(LANG(?animeLabel) = "en")
@@ -81,6 +78,17 @@ def get_anilist_info():
         'cover_image': anime_info.get('cover_image', ''),
         'average_score': anime_info.get('average_score', ''),
     })
+
+@app.route('/generate_recommendations', methods=['POST'])
+def generate_recommendations():
+    selected_animes = request.json.get('selectedAnimes', [])
+    
+    # Perform Wikidata queries to obtain information about selected animes
+    # Implement your recommendation generation logic here
+
+    recommendations = [...]  # Replace with your actual recommendations
+    
+    return jsonify({'recommendations': recommendations})
 
 @app.route('/forbidden')
 def forbidden():
