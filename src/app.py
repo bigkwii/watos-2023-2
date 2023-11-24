@@ -1,10 +1,4 @@
 from flask import Flask, redirect, url_for, request, render_template, make_response, session, flash, jsonify
-import numpy as np
-import pandas as pd
-import rdflib as rdf
-import requests
-import json
-import re
 import sys
 import SPARQLWrapper as sw
 from AnilistPython import Anilist
