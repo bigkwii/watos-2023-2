@@ -42,8 +42,8 @@
         <!-- Selected animes will be added here dynamically -->
         {% for anime in selected_animes %}
             <li class="list-group-item">
-                {{ anime }}
-                <button class="btn btn-danger btn-sm float-right" onclick="removeFromSelected('{{ anime }}')">X</button>
+                {{ anime.animeLabel.value }}
+                <button class="btn btn-danger btn-sm float-right" onclick='removeFromSelected("{{ anime }}")'>X</button>
             </li>
         {% endfor %}
     </ul>
@@ -54,67 +54,72 @@
             {% for result in results %}
                 <li class="list-group-item">
                     {{ result.animeLabel.value }}
-                    <button class="btn btn-success btn-sm float-right" onclick="addToSelected('{{ result.animeLabel.value }}')">+</button>
+                    <button class="btn btn-success btn-sm float-right" onclick='addToSelected("{{ result }}")'>+</button>
                 </li>
             {% endfor %}
         </ul>
     {% endif %}
 
     <script>
-        function addToSelected(animeTitle) {
-        const selectedAnimesList = document.getElementById('selectedAnimes');
-        // Check if the anime is already in the list
-        if (!selectedAnimesList.innerHTML.includes(animeTitle)) {
-            const listItem = document.createElement('li');
-            listItem.className = 'list-group-item';
-            listItem.textContent = animeTitle;
-            // Add a "Remove" button next to the selected anime
-            const removeButton = document.createElement('button');
-            removeButton.className = 'btn btn-danger btn-sm float-right';
-            removeButton.textContent = 'X';
-            removeButton.onclick = function() {
-                removeFromSelected(animeTitle);
-            };
-            listItem.appendChild(removeButton);
-            // Add the anime and the "Remove" button to the list
-            selectedAnimesList.appendChild(listItem);
-            // Add this section to make an AJAX request and add the anime to the selected list
-            fetch('/add_to_selected', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ anime_title: animeTitle }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    // If adding to the server fails, remove the anime from the UI
-                    selectedAnimesList.removeChild(listItem);
-                }
-            });
-        } else {
-                // Optionally, provide feedback to the user that the anime is already in the list
-                alert('No need to add this anime twice!');
+        function addToSelected(animeData) {
+            // convert ' to " and parse the JSON string into an object
+            animeData = JSON.parse(animeData.replace(/'/g, '"'));
+            const animeLabel = animeData.animeLabel.value;
+            const selectedAnimesList = document.getElementById('selectedAnimes');
+            // Check if the anime is already in the list
+            if (!selectedAnimesList.innerHTML.includes(animeData.animeLabel.value)) {
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item';
+                listItem.textContent = animeData.animeLabel.value;
+                // Add a "Remove" button next to the selected anime
+                const removeButton = document.createElement('button');
+                removeButton.className = 'btn btn-danger btn-sm float-right';
+                removeButton.textContent = 'X';
+                removeButton.onclick = function() {
+                    removeFromSelected(JSON.stringify(animeData));
+                };
+                listItem.appendChild(removeButton);
+                // Add the anime and the "Remove" button to the list
+                selectedAnimesList.appendChild(listItem);
+                // Add this section to make an AJAX request and add the anime to the selected list
+                fetch('/add_to_selected', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(animeData),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        // If adding to the server fails, remove the anime from the UI
+                        selectedAnimesList.removeChild(listItem);
+                    }
+                });
+            } else {
+                    // Optionally, provide feedback to the user that the anime is already in the list
+                    alert('No need to add this anime twice!');
             }
         }
 
-        function removeFromSelected(animeTitle) {
-        const selectedAnimesList = document.getElementById('selectedAnimes');
-        const listItem = [...selectedAnimesList.children].find(item => item.textContent.includes(animeTitle));
-        // Remove the anime from the list
-        if (listItem) {
-            selectedAnimesList.removeChild(listItem);
-            // Add this section to make an AJAX request and remove the anime from the selected list
-            fetch('/remove_from_selected', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ anime_title: animeTitle }),
-            });
+        function removeFromSelected(animeData) {
+            // convert ' to " and parse the JSON string into an object
+            animeData = JSON.parse(animeData.replace(/'/g, '"'));
+            const selectedAnimesList = document.getElementById('selectedAnimes');
+            const listItem = [...selectedAnimesList.children].find(item => item.textContent.includes(animeData.animeLabel.value));
+            // Remove the anime from the list
+            if (listItem) {
+                selectedAnimesList.removeChild(listItem);
+                // Add this section to make an AJAX request and remove the anime from the selected list
+                fetch('/remove_from_selected', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(animeData),
+                });
+            }
         }
-    }
     </script>
 
     <!-- Bootstrap core JavaScript -->

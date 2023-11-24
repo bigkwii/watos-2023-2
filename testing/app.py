@@ -48,21 +48,22 @@ def index():
 
 @app.route('/search', methods=['POST'])
 def search():
-    print(SELECTED_ANIMES)
     query = request.form['query']
     results = perform_wikidata_query(query)
     return render_template("index.html", query=query, results=results, selected_animes=SELECTED_ANIMES)
 
 @app.route('/add_to_selected', methods=['POST'])
 def add_to_selected():
-    anime_title = request.json['anime_title']
-    SELECTED_ANIMES.append(anime_title)
+    anime_data = request.json
+    SELECTED_ANIMES.append(anime_data)
+    print(SELECTED_ANIMES)
     return jsonify({'success': True})
 
 @app.route('/remove_from_selected', methods=['POST'])
 def remove_from_selected():
-    anime_title = request.json['anime_title']
-    SELECTED_ANIMES.remove(anime_title)
+    anime_data = request.json
+    SELECTED_ANIMES.remove(anime_data)
+    print(SELECTED_ANIMES)
     return jsonify({'success': True})
 
 @app.route('/get_anilist_info', methods=['POST'])
