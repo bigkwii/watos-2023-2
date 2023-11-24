@@ -10,7 +10,7 @@ Web de Datos 2023-2 - Final Project - Group 7
 
 ## What is this?
 
-Basically, a small experiment to see if we can generate anime recomendations based on the user's "prevoiusly watched" list, via Wikidata.
+Basically, a small experiment to see if we can generate anime recomendations based on the user's "previously watched" list, via Wikidata.
 
 ## How to run
 
